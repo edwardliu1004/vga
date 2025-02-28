@@ -1,16 +1,22 @@
 module pingpong_buffer #(parameter PIXEL_COUNT = 768, parameter ADDR_WIDTH  = 20)(
     input  logic clk,         
     input  logic rst, 
-	 input  vsync, 
 
     input  logic [9:0] vga_hc,     
     input  logic [9:0] vga_vc,      
     output logic [7:0] pixel_data_out, // pixel data to drive VGA (1 byte per pixel)
 
     input  logic [ADDR_WIDTH-1:0] write_addr,   // address for writing updated pixel
-    input  logic [7:0] pixel_data_in // new pixel data (color)
+    input  logic [7:0] pixel_data_in, // new pixel data (color)
+	 
+	 input [2:0] input_red,
+	 input [2:0] input_green,
+	 input [1:0] input_blue
 );
 
+	logic [7:0] pixel_data_in_combined;
+	assign pixel_data_in_combined[7:0] = {input_red, input_green, input_blue};
+	
   reg [7:0] buffer0 [0:PIXEL_COUNT-1];
   reg [7:0] buffer1 [0:PIXEL_COUNT-1];
 
@@ -34,7 +40,7 @@ module pingpong_buffer #(parameter PIXEL_COUNT = 768, parameter ADDR_WIDTH  = 20
   
   // Combine x and y to form a linear address. In our example, there are 32 pixels per row.
   logic [ADDR_WIDTH-1:0] read_addr;
-  assign read_addr = ypos * 5'd32 + xpos;
+  assign read_addr = ypos * 32 + xpos;
 
   // Read from the selected buffer.
   logic [7:0] read_data_reg;
@@ -44,16 +50,14 @@ module pingpong_buffer #(parameter PIXEL_COUNT = 768, parameter ADDR_WIDTH  = 20
     else
       read_data_reg = buffer1[read_addr];
   end
-
   assign pixel_data_out = read_data_reg;
 
   // Write to the *non-displayed* buffer.
-
   always_ff @(posedge clk) begin
       if (read_sel == 1'b0)
-        buffer0[write_addr] <= pixel_data_in;
+        buffer1[write_addr] <= pixel_data_in_combined;
       else
-        buffer1[write_addr] <= pixel_data_in;
+        buffer0[write_addr] <= pixel_data_in_combined;
   end
 
 endmodule

@@ -44,7 +44,10 @@ module vga (
 	
 	//ping-pong buffer
 	logic [7:0] pp_pixel_data;
-	pingpong_buffer #(768,20)(clk_25MHz, rst_n, vsync, hc_out, vc_out, pp_pixel_data, pixel_addr, {gfx_red, gfx_green, gfx_blue});
+	logic [7:0] pixel_data_in_combined;
+	assign pixel_data_in_combined[7:0] = {gfx_red, gfx_green, gfx_blue};
+	
+	pingpong_buffer #(768,20)(clk_25MHz, rst_n, hc_out, vc_out, pp_pixel_data, pixel_addr, pixel_data_in_combined, gfx_red, gfx_green, gfx_blue);
 	
 	logic [2:0] final_red;
 	logic [2:0] final_green;
